@@ -2,6 +2,7 @@ package transitvehiclespeedcalculator;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import java.awt.GridBagLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
@@ -208,7 +209,7 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 					userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
 					userTransitVehicleAttributes.put(nameTextPane.getText(), newTrain);
 					parent.setUserTransitVehicleAttributes(userTransitVehicleAttributes);
-					UpdateScrollPaneButtons(userTransitVehicleAttributes);
+					updateScrollPaneButtons(userTransitVehicleAttributes);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -223,7 +224,7 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		saveAttributesButton = new JButton("Save Attributes");
 		saveAttributesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-
+				parent.saveChanges();
 			}
 		});
 		
@@ -233,7 +234,7 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 			public void actionPerformed(ActionEvent arg0) {
 				String selectedVehicleName = (String) vehicleListComboBox.getSelectedItem();
 				userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
-				DisplayCalculationResults(selectedVehicleName, userTransitVehicleAttributes.get(selectedVehicleName));
+				displayCalculationResults(selectedVehicleName, userTransitVehicleAttributes.get(selectedVehicleName));
 			}
 		});
 		
@@ -272,7 +273,7 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 
 		editVehicleListPanel.add(selectedVehicleLabel);
 
-		//Add labels to main panel
+		//Add label to main panel
 		add(titleLabel, gbc_titleLabel);
 
 		//Add buttons to panels
@@ -307,21 +308,23 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		add(transitVehicleAttributePanel, gbc_transitVehicleAttributePanel);
 		add(calculateAverageSpeedPanel, gbc_calculateAverageSpeedPanel);
 		add(calculationResultsPanel, gbc_calculationResultsPanel);
+
+		updateScrollPaneButtons(userTransitVehicleAttributes);
 	}
-	private void UpdateScrollPaneButtons(HashMap<String,TransitVehicle> attributes) {
+	private void updateScrollPaneButtons(HashMap<String,TransitVehicle> attributes) {
 		transitVehicleListPanel.removeAll();
 		for (Map.Entry<String,TransitVehicle> name : attributes.entrySet()) {
 			JButton scrollPaneButton = new JButton(name.getKey());
 			scrollPaneButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					DisplayCalculationResults(name.getKey(), name.getValue());
+					displayCalculationResults(name.getKey(), name.getValue());
 				}
 			});
 			transitVehicleListPanel.add(scrollPaneButton);
 			transitVehicleListPanel.validate();
 		}
 	}
-	private void DisplayCalculationResults(String name, TransitVehicle transitVehicle) {
+	private void displayCalculationResults(String name, TransitVehicle transitVehicle) {
 		nameTextPane.setText(name);
 		Component[] fields = transitVehicleAttributeEntryPanel.getComponents();
 

@@ -38,7 +38,26 @@ public class TransitVehicle {
     }
 
     public void determineTrainSpeed() {
+        
+        //double averageAcceleration = (accelerationRate + decelerationRate)/2;
+        //double accelerationTime = topSpeed/averageAcceleration * 2;
+        //double accelerationDistance = 0.5 * accelerationTime * topSpeed;
+        /*
+        if (accelerationDistance > stationSpacing) {
+            topSpeed = 2 * accelerationDistance/accelerationTime;
+        }
+        */
+
         stationSpacing = lineLength/stationCount;
+
+        double accelerationRatio = decelerationRate/(accelerationRate + decelerationRate); //percent of the time the train is accelerating
+        double accelerationDistance = accelerationRatio * stationSpacing;
+        double acceleratedTopSpeed = Math.pow(accelerationRate * 2 * accelerationDistance, 0.5);
+
+        if (topSpeed > acceleratedTopSpeed) {
+            topSpeed = acceleratedTopSpeed;
+        }
+
         averageSpeed = 3.6 * (stationSpacing)/(stationDwellTime + (4 * topSpeed)/(accelerationRate + decelerationRate) + (stationSpacing/topSpeed - topSpeed/accelerationRate/2 - topSpeed/decelerationRate/2));
         attributes[5] = topSpeed * 3.6;
     }
@@ -49,5 +68,6 @@ public class TransitVehicle {
         timeLossAtEachStation = stationDwellTime + topSpeed/accelerationRate/2 + topSpeed/decelerationRate/2;
         totalTimeRequired = timeWithoutStations + stationCount * timeLossAtEachStation;
         averageSpeed = lineLength/totalTimeRequired;
+        attributes[5] = topSpeed * 3.6;
     }
 }
