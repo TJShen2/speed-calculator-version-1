@@ -2,6 +2,10 @@ package transitvehiclespeedcalculator;
 
 public class TransitVehicle {
     
+    private String name;
+    public String getName() { return name; }
+    public void setName(String value) { name = value; }
+
     private double stationCount;
     private double accelerationRate; // m/s^2
     private double decelerationRate; // m/s^2
@@ -21,13 +25,31 @@ public class TransitVehicle {
     public double[] getAttributes() { return attributes; }
     public void setAttributes(double[] value) { attributes = value; }
 
+    private double percentTopSpeed;
+    public double getPercentTopSpeed() { return percentTopSpeed; }
+    public void setPercentTopSpeed(double value) { percentTopSpeed = value; }
+
+    //For determineTrainSpeed()
+    private double accelerationTime;
+    private double accelerationDistance;
+
+    private double decelerationTime;
+    private double decelerationDistance;
+
+    private double minimumDistance;
+    private double topSpeedTime;
+    private double averageSpeedDuringAcceleration;
+    private double averageSpeedDuringDeceleration;
+
+    //For determineTrainSpeedAlternative()
     private double timeWithoutStations;
     private double timeLossAtEachStation;
     private double totalTimeRequired;
 
-    public TransitVehicle(double stationCount, double accelerationRate, double decelerationRate, double stationDwellTime, double lineLength, double topSpeed) {
+    public TransitVehicle(String name, double stationCount, double accelerationRate, double decelerationRate, double stationDwellTime, double lineLength, double topSpeed) {
         double[] attributes = {stationCount, accelerationRate, decelerationRate, stationDwellTime, lineLength, topSpeed * 3.6};
 
+        this.name = name;
         this.stationCount = stationCount;
         this.accelerationRate = accelerationRate;
         this.decelerationRate = decelerationRate;
@@ -38,27 +60,45 @@ public class TransitVehicle {
     }
 
     public void determineTrainSpeed() {
-        
-        //double averageAcceleration = (accelerationRate + decelerationRate)/2;
-        //double accelerationTime = topSpeed/averageAcceleration * 2;
-        //double accelerationDistance = 0.5 * accelerationTime * topSpeed;
-        /*
-        if (accelerationDistance > stationSpacing) {
-            topSpeed = 2 * accelerationDistance/accelerationTime;
-        }
-        */
-
         stationSpacing = lineLength/stationCount;
 
-        double accelerationRatio = decelerationRate/(accelerationRate + decelerationRate); //percent of the time the train is accelerating
-        double accelerationDistance = accelerationRatio * stationSpacing;
-        double acceleratedTopSpeed = Math.pow(accelerationRate * 2 * accelerationDistance, 0.5);
+        accelerationTime = topSpeed/accelerationRate;
+        accelerationDistance = (accelerationRate * Math.pow(accelerationTime, 2))/2;
 
-        if (topSpeed > acceleratedTopSpeed) {
-            topSpeed = acceleratedTopSpeed;
+        decelerationTime = topSpeed/decelerationRate;
+        decelerationDistance = (decelerationRate * Math.pow(decelerationTime, 2))/2;
+
+        minimumDistance = accelerationDistance + decelerationDistance;
+
+        if (stationSpacing <= minimumDistance) {
+            topSpeedTime = 0;
+
+            double accelerationPercent = accelerationDistance/minimumDistance; //percent of the time the train is accelerating
+            accelerationDistance = stationSpacing * accelerationPercent;
+            accelerationTime *= (stationSpacing/minimumDistance);
+            averageSpeedDuringAcceleration = (accelerationRate * accelerationTime)/2;
+
+            double decelerationPercent = 1 - accelerationPercent; //percent of the time the train is decelerating
+            decelerationDistance = stationSpacing * decelerationPercent;
+            decelerationTime = (stationSpacing/minimumDistance);
+            averageSpeedDuringDeceleration = (decelerationRate * decelerationTime)/2;
+
+        } else {
+            double topSpeedDistance = stationSpacing - minimumDistance;
+            topSpeedTime = topSpeedDistance/topSpeed;
+
+            double accelerationPercent = accelerationDistance/minimumDistance; //percent of the time the train is accelerating
+            accelerationDistance = minimumDistance * accelerationPercent;
+            averageSpeedDuringAcceleration = (accelerationRate * accelerationTime)/2;
+
+            double decelerationPercent = 1 - accelerationPercent; //percent of the time the train is decelerating
+            decelerationDistance = minimumDistance * decelerationPercent;
+            averageSpeedDuringDeceleration = (decelerationRate * decelerationTime)/2;
         }
 
-        averageSpeed = 3.6 * (stationSpacing)/(stationDwellTime + (4 * topSpeed)/(accelerationRate + decelerationRate) + (stationSpacing/topSpeed - topSpeed/accelerationRate/2 - topSpeed/decelerationRate/2));
+        double totalTime = stationDwellTime + accelerationTime + decelerationTime + topSpeedTime;
+        averageSpeed = 3.6 * (accelerationTime * averageSpeedDuringAcceleration + decelerationTime * averageSpeedDuringDeceleration + topSpeedTime * topSpeed)/totalTime;
+        percentTopSpeed = topSpeedTime/totalTime * 100;
         attributes[5] = topSpeed * 3.6;
     }
 

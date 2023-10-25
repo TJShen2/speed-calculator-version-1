@@ -1,9 +1,12 @@
 package transitvehiclespeedcalculator;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
+
 import java.awt.EventQueue;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
 import java.lang.reflect.Type;
 
 import javax.swing.JFrame;
@@ -15,9 +18,9 @@ public class App {
 	private JFrame frame;
 	private TransitVehicleSpeedCalculatorPanel transitVehicleSpeedCalculatorPanel;
 
-	private HashMap<String,TransitVehicle> userTransitVehicleAttributes;
-	public HashMap<String,TransitVehicle> getUserTransitVehicleAttributes() { return userTransitVehicleAttributes; }
-	public void setUserTransitVehicleAttributes(HashMap<String,TransitVehicle> value) { userTransitVehicleAttributes = value; }
+	private List<TransitVehicle> userTransitVehicleAttributes;
+	public List<TransitVehicle> getUserTransitVehicleAttributes() { return userTransitVehicleAttributes; }
+	public void setUserTransitVehicleAttributes(List<TransitVehicle> value) { userTransitVehicleAttributes = value; }
 	private Type userTransitVehicleAttributesType;
 
 	private JsonHandler userTransitVehiclesJsonHandler;
@@ -54,10 +57,10 @@ public class App {
 		try {
 			userTransitVehicleAttributes = userTransitVehiclesJsonHandler.ReadObjectFromJson();
 		} catch (Exception e) {
-			userTransitVehicleAttributes = new HashMap<String,TransitVehicle>(100, 0.75f);
+			userTransitVehicleAttributes = new ArrayList<TransitVehicle>();
 			e.printStackTrace();
 		}
-		userTransitVehicleAttributesType = new TypeToken<HashMap<String,TransitVehicle>>() {}.getType();
+		userTransitVehicleAttributesType = new TypeToken<List<TransitVehicle>>() {}.getType();
 		
 		frame = new JFrame();
 		frame.setBounds(100, 100, 1152, 745);

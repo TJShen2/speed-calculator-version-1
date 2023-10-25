@@ -1,9 +1,11 @@
 package transitvehiclespeedcalculator;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import java.lang.reflect.Type;
@@ -43,9 +45,9 @@ public class JsonHandler {
             e.printStackTrace();
         }
     }
-    public HashMap<String,TransitVehicle> ReadObjectFromJson() {
-        Type type = new TypeToken<HashMap<String,TransitVehicle>>() {}.getType();
-        HashMap<String,TransitVehicle> deserializedObject = new HashMap<String,TransitVehicle>();
+    public List<TransitVehicle> ReadObjectFromJson() {
+        Type type = new TypeToken<List<TransitVehicle>>() {}.getType();
+        List<TransitVehicle> deserializedObject = new ArrayList<TransitVehicle>();
         
         try {
             jsonReader = new Scanner(selectedFile);
@@ -55,6 +57,8 @@ public class JsonHandler {
                 jsonRepresentation += jsonReader.nextLine();
             }
             deserializedObject = jsonHandler.fromJson(jsonRepresentation, type);
+        } catch (FileNotFoundException e) {
+            new File("vehicles.json");
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,7 +1,6 @@
 package transitvehiclespeedcalculator;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import java.awt.GridBagLayout;
 import java.awt.CardLayout;
@@ -16,17 +15,24 @@ import java.awt.Font;
 
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.BoxLayout;
-import javax.swing.JComboBox;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
 
 public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 
-	private HashMap<String,TransitVehicle> userTransitVehicleAttributes;
+	private App parent;
+
+	private List<TransitVehicle> userTransitVehicleAttributes;
+	private ListSelectionModel vehicleListSelectionModel;
 
 	private GridBagLayout contentPaneLayout;
 	
@@ -48,7 +54,6 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 	private JLabel dwellTimeLabel;
 	private JLabel lineLengthLabel;
 	private JLabel topSpeedLabel;
-	private JLabel selectedVehicleLabel;
 	
 	//Text panes
 	private JTextPane nameTextPane;
@@ -68,14 +73,13 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 	
 	//Scroll panes
 	private JScrollPane transitVehicleListScrollPane;
-	
-	//Combo boxes
-	private JComboBox<String> vehicleListComboBox;
+	private JList<String> vehicleList;
 
 	/**
 	 * Create the frame.
 	 */
 	public TransitVehicleSpeedCalculatorPanel(App parent) {
+		this.parent = parent;
 		userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
 
 		setBounds(100, 100, 1152, 745);
@@ -144,8 +148,6 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		gbc_titleLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_titleLabel.gridx = 0;
 		gbc_titleLabel.gridy = 1;
-		
-		selectedVehicleLabel = new JLabel("Selected Vehicle:");
 		nameLabel = new JLabel("Name");
 		nameLabel.setFont(new Font("Arial", Font.PLAIN, 13));
 		nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -188,53 +190,48 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		deleteVehicleButton = new JButton("Delete Selected Vehicle");
 		deleteVehicleButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String selectedVehicleName = (String) vehicleListComboBox.getSelectedItem();
+				int[] selectedIndices = vehicleList.getSelectedIndices();
 				userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
-				userTransitVehicleAttributes.remove(selectedVehicleName);
+				for (int selectedVehicle : selectedIndices) {
+					userTransitVehicleAttributes.remove(selectedVehicle);
+				}
 				parent.setUserTransitVehicleAttributes(userTransitVehicleAttributes);
-				vehicleListComboBox.removeItem(selectedVehicleName);
+				updateVehicleList();
 			}
 		});
 		calculateAverageSpeedButton = new JButton("Calculate Average Speed");
 		calculateAverageSpeedButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
-					TransitVehicle newTrain = new TransitVehicle(new Double(stationCountTextPane.getText()), 
+					TransitVehicle newTrain = new TransitVehicle(
+						new String(nameTextPane.getText()),
+						new Double(stationCountTextPane.getText()), 
 						new Double(accelerationRateTextPane.getText()), 
 						new Double(decelerationRateTextPane.getText()), 
 						new Double(dwellTimeTextPane.getText()), 
 						new Double(lineLengthTextPane.getText()), 
-						new Double(topSpeedTextPane.getText()));
+						new Double(topSpeedTextPane.getText())
+					);
 					newTrain.determineTrainSpeed();
 					userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
-					userTransitVehicleAttributes.put(nameTextPane.getText(), newTrain);
+					userTransitVehicleAttributes.add(newTrain);
 					parent.setUserTransitVehicleAttributes(userTransitVehicleAttributes);
-					updateScrollPaneButtons(userTransitVehicleAttributes);
+					updateVehicleList();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				vehicleListComboBox.addItem(nameTextPane.getText());
 
 				for (Component component : transitVehicleAttributeEntryPanel.getComponents()) {
 					JTextPane field = (JTextPane) component;
 					field.setText("");
 				}
+				updateVehicleList();
 			}
 		});
 		saveAttributesButton = new JButton("Save Attributes");
 		saveAttributesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				parent.saveChanges();
-			}
-		});
-		
-		//Initialize combo boxes
-		vehicleListComboBox = new JComboBox<String>();
-		vehicleListComboBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				String selectedVehicleName = (String) vehicleListComboBox.getSelectedItem();
-				userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
-				displayCalculationResults(selectedVehicleName, userTransitVehicleAttributes.get(selectedVehicleName));
 			}
 		});
 		
@@ -271,8 +268,6 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		transitVehicleAttributeLabelPanel.add(lineLengthLabel);
 		transitVehicleAttributeLabelPanel.add(topSpeedLabel);
 
-		editVehicleListPanel.add(selectedVehicleLabel);
-
 		//Add label to main panel
 		add(titleLabel, gbc_titleLabel);
 
@@ -282,9 +277,6 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 
 		calculateAverageSpeedPanel.add(calculateAverageSpeedButton);
 		calculateAverageSpeedPanel.add(saveAttributesButton);
-		
-		//Add combo boxes to panels
-		editVehicleListPanel.add(vehicleListComboBox);
 
 		//Add text panes to panels
 		transitVehicleAttributeEntryPanel.add(nameTextPane);
@@ -297,6 +289,9 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 
 		//Add panels to other top-level containers
 		transitVehicleListScrollPane.setViewportView(transitVehicleListPanel);
+		
+		vehicleList = new JList<String>();
+		transitVehicleListPanel.add(vehicleList);
 		transitVehicleAttributePanel.add(transitVehicleAttributeLabelPanel);
 		transitVehicleAttributePanel.add(transitVehicleAttributeEntryPanel);
 
@@ -309,29 +304,38 @@ public class TransitVehicleSpeedCalculatorPanel extends JPanel {
 		add(calculateAverageSpeedPanel, gbc_calculateAverageSpeedPanel);
 		add(calculationResultsPanel, gbc_calculationResultsPanel);
 
-		updateScrollPaneButtons(userTransitVehicleAttributes);
+		updateVehicleList();
 	}
-	private void updateScrollPaneButtons(HashMap<String,TransitVehicle> attributes) {
+	private void updateVehicleList() {
 		transitVehicleListPanel.removeAll();
-		for (Map.Entry<String,TransitVehicle> name : attributes.entrySet()) {
-			JButton scrollPaneButton = new JButton(name.getKey());
-			scrollPaneButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					displayCalculationResults(name.getKey(), name.getValue());
-				}
-			});
-			transitVehicleListPanel.add(scrollPaneButton);
-			transitVehicleListPanel.validate();
+		userTransitVehicleAttributes = parent.getUserTransitVehicleAttributes();
+		
+		DefaultListModel<String> vehicleListModel = new DefaultListModel<String>();
+
+		for (TransitVehicle vehicle : userTransitVehicleAttributes) {
+			String vehicleText = vehicle.getName();
+			vehicleListModel.addElement(vehicleText);
 		}
+		vehicleList = new JList<String>(vehicleListModel);
+		vehicleListSelectionModel = vehicleList.getSelectionModel();
+		vehicleListSelectionModel.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				displayCalculationResults(vehicleList.getSelectedIndex());
+			}
+		});
+		
+		transitVehicleListPanel.add(vehicleList);
+		transitVehicleListPanel.validate();
 	}
-	private void displayCalculationResults(String name, TransitVehicle transitVehicle) {
-		nameTextPane.setText(name);
+	private void displayCalculationResults(int selectedIndex) {
+		TransitVehicle transitVehicle = userTransitVehicleAttributes.get(selectedIndex);
+		nameTextPane.setText(transitVehicle.getName());
 		Component[] fields = transitVehicleAttributeEntryPanel.getComponents();
 
 		for (int i = 1; i < fields.length; i++) {
 			JTextPane field = (JTextPane) fields[i];
 			field.setText(String.valueOf(transitVehicle.getAttributes()[i - 1]));
 		}
-		calculationResultsTextPane.setText("Average speed is: " + transitVehicle.getAverageSpeed() + " km/h\nLine stop spacing is: " + transitVehicle.getStationSpacing() + " m");
+		calculationResultsTextPane.setText("Average speed is: " + transitVehicle.getAverageSpeed() + " km/h\nLine stop spacing is: " + transitVehicle.getStationSpacing() + " m\n" + "% top speed is: " + transitVehicle.getPercentTopSpeed());
 	}
 }
